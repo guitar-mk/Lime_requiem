@@ -1,6 +1,7 @@
 # Eigene kompilierte Programme
 re9_weapons
 re9
+game
 
 # Standard C++ Kompilate und win Programme
 *.out
