@@ -1,28 +1,40 @@
-#pragma once // Verhindert mehrfaches Einbinden der Header-Datei
+#ifndef WEAPON_H
+#define WEAPON_H
+
 #include <string>
 #include <iostream>
 
-// Abstrakte Basisklasse für alle Waffen
-class Weapon {
-protected: // "protected" bedeutet: Abgeleitete Klassen dürfen darauf zugreifen, von außen (main) ist es gesperrt.
+// --- BASISKLASSE ---
+// Alles, was im Inventar liegen kann (Waffen, Munition, Kräuter), ist ein "Item"
+class Item {
+public:
     std::string name;
+    int gridWidth;  // Breite in Inventar-Kästchen
+    int gridHeight; // Höhe in Inventar-Kästchen
+
+    // Konstruktor
+    Item(std::string n, int w, int h);
+    
+    // Virtuelle Methode: Erlaubt es Unterklassen, diese Funktion zu überschreiben (Polymorphie)
+    virtual void inspect() const; 
+    
+    // Ein virtueller Destruktor ist wichtig, wenn man mit Vererbung arbeitet!
+    virtual ~Item() = default;    
+};
+
+// --- WAFFEN KLASSE ---
+// Erbt alle Eigenschaften von Item (name, gridWidth, gridHeight)
+class Weapon : public Item {
+public:
     int damage;
     int ammoCapacity;
     int currentAmmo;
 
-public:
-    // Konstruktor
-    Weapon(std::string wName, int wDamage, int wCapacity);
+    // Konstruktor für die Waffe
+    Weapon(std::string n, int w, int h, int dmg, int cap);
     
-    // Virtueller Destruktor (Wichtig bei Vererbung, damit Speicher sauber freigegeben wird!)
-    virtual ~Weapon() = default;
-
-    // Rein virtuelle Funktion ("= 0"). Macht die Klasse abstrakt.
-    // Jede abgeleitete Waffe MUSS definieren, wie sie feuert.
-    virtual void fire() = 0; 
-
-    // Gemeinsame Funktionen für alle Waffen
-    void reload();
-    void displayStatus() const;
-    std::string getName() const;
+    // Überschreibt die inspect-Methode der Basisklasse
+    void inspect() const override; 
 };
+
+#endif

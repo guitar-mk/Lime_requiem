@@ -1,21 +1,19 @@
 #include "Weapon.h"
 
-// Konstruktor-Implementierung
-Weapon::Weapon(std::string wName, int wDamage, int wCapacity)
-    : name(wName), damage(wDamage), ammoCapacity(wCapacity), currentAmmo(wCapacity) {
-    // currentAmmo ist zu Beginn voll
+// --- IMPLEMENTIERUNG ITEM ---
+Item::Item(std::string n, int w, int h) : name(n), gridWidth(w), gridHeight(h) {}
+
+void Item::inspect() const {
+    std::cout << "- " << name << " (Belegt " << gridWidth << "x" << gridHeight << " Slots)\n";
 }
 
-void Weapon::reload() {
-    std::cout << "-> Lade " << name << " nach..." << std::endl;
-    currentAmmo = ammoCapacity;
-}
+// --- IMPLEMENTIERUNG WEAPON ---
+// Der Konstruktor ruft direkt den Konstruktor der Basisklasse (Item) auf
+Weapon::Weapon(std::string n, int w, int h, int dmg, int cap) 
+    : Item(n, w, h), damage(dmg), ammoCapacity(cap), currentAmmo(cap) {}
 
-void Weapon::displayStatus() const {
-    std::cout << "[" << name << "] Schaden: " << damage 
-              << " | Munition: " << currentAmmo << "/" << ammoCapacity << std::endl;
-}
-
-std::string Weapon::getName() const {
-    return name;
+void Weapon::inspect() const {
+    std::cout << "- [WAFFE] " << name << " | Dmg: " << damage 
+              << " | Munition: " << currentAmmo << "/" << ammoCapacity 
+              << " (" << gridWidth << "x" << gridHeight << " Slots)\n";
 }
