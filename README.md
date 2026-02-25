@@ -1,24 +1,55 @@
-# Resident Evil 9: Requiem - Waffensystem (C++ OOP Übung)
+# Projekt: Lime Requiem (Resident Evil Inventory System)
+## Projektstruktur
 
-Dieses Projekt demonstriert die grundlegenden Konzepte der objektorientierten Programmierung (OOP) in C++ anhand des spekulierten Waffenarsenals aus *Resident Evil 9: Requiem*.
+## Das Projekt wurde professionell aufgeräumt und strukturiert:
 
-## 📂 Dateistruktur
-* `Weapon.h` / `Weapon.cpp`: Enthält die abstrakte Basisklasse `Weapon`. Verwaltet gemeinsame Attribute wie Name, Schaden und Munitionskapazität.
-* `WeaponTypes.h` / `WeaponTypes.cpp`: Enthält die abgeleiteten Klassen:
-  * `Handgun`: Standard-Pistolen (z.B. Beretta M1934).
-  * `Magnum`: Hochkalibrige Waffen mit massivem Schaden (z.B. RSh-12).
-  * `SMG`: Maschinenpistolen mit Salvenfeuer-Mechanik (z.B. MPA30DMG).
-  * `Shotgun`: Schrotflinten mit Streuschaden (z.B. Serbu Super Shorty).
-* `main.cpp`: Das Hauptprogramm zur Initialisierung des Inventars und zur Kampf-Simulation.
+    src/ - Enthält den gesamten C++ Quellcode und Header-Dateien.
 
-## 🛠️ Technische Konzepte
-1. **Vererbung:** Die spezifischen Waffentypen erben Attribute (`damage`, `currentAmmo`) und Methoden (`reload()`) von der Basisklasse `Weapon`.
-2. **Abstrakte Klassen:** `Weapon` ist abstrakt (besitzt die rein virtuelle Funktion `virtual void fire() = 0;`). Man kann keine direkte Instanz von "Waffe" erstellen, sondern nur von spezifischen Typen.
-3. **Polymorphie:** Im Inventar (Vector in `main.cpp`) werden Zeiger vom Typ `Weapon*` gespeichert. Ruft man `fire()` auf, entscheidet das Programm zur Laufzeit automatisch, ob die Pistolen-, Shotgun- oder Magnum-Variante des Schusses ausgeführt wird.
+    src/imgui/ - Enthält die GUI-Bibliothek Dear ImGui.
 
-## 🚀 Kompilieren und Ausführen
-Um das Projekt im Terminal (z.B. mit GCC/G++) zu kompilieren, navigiere in den Ordner mit den Dateien und führe folgenden Befehl aus:
+    img/ - Enthält die Spiel-Assets (PNG-Bilder mit transparentem Hintergrund).
 
-```bash
-g++ main.cpp Weapon.cpp WeaponTypes.cpp -o re9_weapons
-./re9_weapons
+    .gitignore - Verhindert, dass kompilierte Binärdateien auf GitHub landen.
+
+## Verwendete Technologien
+
+    C++ (OOP): Objektorientierte Architektur für das Backend.
+
+    GLFW & OpenGL3: Übernehmen das Erstellen des Fensters (Debian/X11).
+
+    Dear ImGui: Zeichnet die Benutzeroberfläche und das Grid-Inventar.
+
+    stb_image: Lädt PNG-Dateien von der Festplatte.
+
+## C++ Klassenarchitektur (Backend)
+
+## Die Logik basiert auf Vererbung und Polymorphismus:
+
+    Item (Basisklasse): Beinhaltet Name, Breite, Höhe und die Position im Koffer (gridX, gridY).
+
+    Weapon (erbt von Item): Fügt Schaden und Munition hinzu.
+
+    Ammo (erbt von Item): Fügt Munitionstyp und Menge hinzu.
+
+    Inventory (Der Koffer): Verwaltet ein 2D-Raster. Eine Logik prüft, ob genug freie Kästchen für ein Item vorhanden sind.
+
+## Visuelles Rendering (Frontend)
+
+## Das unsichtbare 2D-Raster wird durch ImGui visuell auf den Bildschirm gebracht:
+
+    Schachbrett-Hintergrund: Eine for-Schleife zeichnet das leere Raster.
+
+    Pixelgenaue Platzierung: Mit ImGui::SetCursorPos werden die Bilder exakt auf ihre Koordinaten gezeichnet.
+
+    Texturen: Die PNGs werden als ImGui::ImageButton skaliert.
+
+## Kompilieren unter Linux/Debian
+
+
+`g++ src/main.cpp src/Weapon.cpp src/WeaponTypes.cpp src/imgui/*.cpp -o game -lglfw -lGL`
+
+## Nächste geplante Schritte
+
+    - Echte, fotorealistische transparente PNGs für die Waffen suchen und in img/ ablegen.
+
+    - Drag-and-Drop Logik programmieren.

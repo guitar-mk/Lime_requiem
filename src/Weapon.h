@@ -12,6 +12,10 @@ public:
     int gridWidth;  // Breite in Inventar-Kästchen
     int gridHeight; // Höhe in Inventar-Kästchen
 
+    // Die Position im Koffer
+    int gridX = -1; // -1 bedeutet "Noch nicht im Koffer"
+    int gridY = -1;
+
     // Konstruktor
     Item(std::string n, int w, int h);
     
