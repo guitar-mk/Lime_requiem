@@ -1,0 +1,10 @@
+# Eigene kompilierte Programme
+re9_weapons
+re9
+
+# Standard C++ Kompilate und win Programme
+*.out
+*.o
+*.exe
+*.dll
+
