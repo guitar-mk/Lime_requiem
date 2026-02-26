@@ -94,32 +94,32 @@ public:
     bool moveItem(Item* item, int newX, int newY) {
         int oldX = item->gridX;
         int oldY = item->gridY;
-        
-        // Erstmal virtuell aufheben, damit es nicht mit sich selbst kollidiert
-        removeItem(item); 
-        
-        if (canPlaceItem(item, newX, newY)) {
-            // Platz ist frei! Wir legen es an die neue Stelle
-            for (int x = newX; x < newX + item->gridWidth; x++) {
-                for (int y = newY; y < newY + item->gridHeight; y++) {
-                    grid[x][y] = item;
+            
+            // Erstmal virtuell aufheben, damit es nicht mit sich selbst kollidiert
+            removeItem(item); 
+            
+            if (canPlaceItem(item, newX, newY)) {
+                // Platz ist frei! Wir legen es an die neue Stelle
+                for (int x = newX; x < newX + item->gridWidth; x++) {
+                    for (int y = newY; y < newY + item->gridHeight; y++) {
+                        grid[x][y] = item;
+                    }
                 }
-            }
-            item->gridX = newX;
-            item->gridY = newY;
-            return true;
-        } else {
-            // Platz ist belegt! Wir legen es zurück an den alten Ort
-            for (int x = oldX; x < oldX + item->gridWidth; x++) {
-                for (int y = oldY; y < oldY + item->gridHeight; y++) {
-                    grid[x][y] = item;
+                item->gridX = newX;
+                item->gridY = newY;
+                return true;
+            } else {
+                // Platz ist belegt! Wir legen es zurück an den alten Ort
+                for (int x = oldX; x < oldX + item->gridWidth; x++) {
+                    for (int y = oldY; y < oldY + item->gridHeight; y++) {
+                        grid[x][y] = item;
+                    }
                 }
+                item->gridX = oldX;
+                item->gridY = oldY;
+                return false;
             }
-            item->gridX = oldX;
-            item->gridY = oldY;
-            return false;
         }
-    }
 };
 
 int main() {
@@ -142,18 +142,27 @@ int main() {
     Inventory briefcase(10, 8);
     Weapon* pistol = new Weapon("Alligator Snapper", 2, 2, 150, 15);
     Weapon* shotgun = new Weapon("Serbu Super Shorty", 4, 2, 600, 3);
+    Weapon* m1934 = new Weapon("Beretta M1934", 2, 2, 120, 8);
+    Weapon* mac10 = new Weapon("MAC-10", 3, 2, 200, 30);
+    Weapon* rsh12 = new Weapon("RSH-12", 4, 3, 800, 2);
     Ammo* ammo = new Ammo("Pistolenmunition", 1, 1, "9mm", 30);
 
     briefcase.addItemAt(pistol, 0, 0); 
-    briefcase.addItemAt(shotgun, 2, 0); 
+    briefcase.addItemAt(m1934, 4, 0);
+    briefcase.addItemAt(mac10, 0, 4);
+    briefcase.addItemAt(rsh12, 5, 4);
+    briefcase.addItemAt(shotgun, 6, 0); 
     briefcase.addItemAt(ammo, 0, 2);
 
     // Texturen laden
-    GLuint texPistol, texShotgun, texAmmo;
+    GLuint texPistol, texShotgun, texAmmo, texMac10, texRsh12, texM1923;
     int w, h;
     LoadTextureFromFile("img/pistol2.png", &texPistol, &w, &h);
     LoadTextureFromFile("img/shotgun.png", &texShotgun, &w, &h);
     LoadTextureFromFile("img/ammo.png", &texAmmo, &w, &h);
+    LoadTextureFromFile("img/mac10.png", &texMac10, &w, &h);
+    LoadTextureFromFile("img/rsh12.png", &texRsh12, &w, &h);
+    LoadTextureFromFile("img/M1934.png", &texM1923, &w, &h);
 
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
@@ -216,6 +225,9 @@ int main() {
             if (item->name == "Alligator Snapper") tex = texPistol;
             else if (item->name == "Serbu Super Shorty") tex = texShotgun;
             else if (item->name == "Pistolenmunition") tex = texAmmo;
+            else if (item->name == "MAC-10") tex = texMac10;
+            else if (item->name == "RSH-12") tex = texRsh12;
+            else if (item->name == "Beretta M1934") tex = texM1923;
 
             // Größe berechnen ABZÜGLICH PADDING (von beiden Seiten)
             ImVec2 size = ImVec2((item->gridWidth * slotSize) - (padding * 2), 
