@@ -1,6 +1,14 @@
 # Projekt: Lime Requiem (Resident Evil Inventory System)
 ## Projektstruktur
 
+![Version](https://img.shields.io/badge/version-1.0.4-blue)
+
+
+<p align="center">
+  <img src="/img/gui_1.png">
+</p>
+
+
 ## Das Projekt wurde professionell aufgeräumt und strukturiert:
 
     src/ - Enthält den gesamten C++ Quellcode und Header-Dateien.
