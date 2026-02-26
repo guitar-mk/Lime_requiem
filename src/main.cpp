@@ -1,7 +1,8 @@
 #include <iostream>
 #include <vector>
+#include <string>
 
-// stb_image.h für png->openGL->ImGui
+// stb_image.h für das Laden von PNGs in OpenGL
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
@@ -15,7 +16,12 @@
 #include "Weapon.h"
 #include "WeaponTypes.h"
 
-// Laden des pngs als OpenGL-Texturen
+struct ItemRegistry {
+    Item* item;
+    GLuint texture;
+    bool isInInventory;
+};
+
 bool LoadTextureFromFile(const char* filename, GLuint* out_texture, int* out_width, int* out_height) {
     int image_width = 0, image_height = 0, channels = 0;
     unsigned char* image_data = stbi_load(filename, &image_width, &image_height, &channels, 4);
@@ -39,8 +45,7 @@ bool LoadTextureFromFile(const char* filename, GLuint* out_texture, int* out_wid
 
 class Inventory {
 public:
-    int columns;
-    int rows;
+    int columns, rows;
     std::vector<Item*> items; 
     std::vector<std::vector<Item*>> grid;
 
@@ -51,9 +56,8 @@ public:
     bool canPlaceItem(Item* item, int startX, int startY) {
         if (startX < 0 || startY < 0 || 
             startX + item->gridWidth > columns || 
-            startY + item->gridHeight > rows) {
-            return false; 
-        }
+            startY + item->gridHeight > rows) return false; 
+
         for (int x = startX; x < startX + item->gridWidth; x++) {
             for (int y = startY; y < startY + item->gridHeight; y++) {
                 if (grid[x][y] != nullptr) return false;
@@ -77,58 +81,33 @@ public:
         return false;
     }
 
-    // Neues Feature: Ein Item aus dem Raster entfernen
     void removeItem(Item* item) {
-        if (item->gridX != -1 && item->gridY != -1) {
+        if (item->gridX != -1) {
             for (int x = item->gridX; x < item->gridX + item->gridWidth; x++) {
                 for (int y = item->gridY; y < item->gridY + item->gridHeight; y++) {
-                    grid[x][y] = nullptr; // Kästchen wieder freigeben
+                    grid[x][y] = nullptr;
                 }
             }
             item->gridX = -1;
             item->gridY = -1;
+            for (auto it = items.begin(); it != items.end(); ++it) {
+                if (*it == item) { items.erase(it); break; }
+            }
         }
     }
 
-    // Neues Feature: Ein Item an einen neuen Ort bewegen
     bool moveItem(Item* item, int newX, int newY) {
-        int oldX = item->gridX;
-        int oldY = item->gridY;
-            
-            // Erstmal virtuell aufheben, damit es nicht mit sich selbst kollidiert
-            removeItem(item); 
-            
-            if (canPlaceItem(item, newX, newY)) {
-                // Platz ist frei! Wir legen es an die neue Stelle
-                for (int x = newX; x < newX + item->gridWidth; x++) {
-                    for (int y = newY; y < newY + item->gridHeight; y++) {
-                        grid[x][y] = item;
-                    }
-                }
-                item->gridX = newX;
-                item->gridY = newY;
-                return true;
-            } else {
-                // Platz ist belegt! Wir legen es zurück an den alten Ort
-                for (int x = oldX; x < oldX + item->gridWidth; x++) {
-                    for (int y = oldY; y < oldY + item->gridHeight; y++) {
-                        grid[x][y] = item;
-                    }
-                }
-                item->gridX = oldX;
-                item->gridY = oldY;
-                return false;
-            }
-        }
+        int oldX = item->gridX, oldY = item->gridY;
+        removeItem(item); 
+        if (addItemAt(item, newX, newY)) return true;
+        addItemAt(item, oldX, oldY);
+        return false;
+    }
 };
 
 int main() {
     if (!glfwInit()) return -1;
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-
-    GLFWwindow* window = glfwCreateWindow(1280, 900, "Resident Evil Inventar", NULL, NULL);
-    if (window == NULL) { glfwTerminate(); return -1; }
+    GLFWwindow* window = glfwCreateWindow(1400, 900, "Resident Evil Inventory Manager", NULL, NULL);
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
 
@@ -138,34 +117,44 @@ int main() {
     ImGui_ImplOpenGL3_Init("#version 130");
     ImGui::StyleColorsDark();
 
-    // Backend-Setup
     Inventory briefcase(10, 8);
-    Weapon* pistol = new Weapon("Alligator Snapper", 2, 2, 150, 15);
-    Weapon* P232 = new Weapon("SIG Sauer P232", 2, 2, 130, 7);
-    //Weapon* shotgun = new Weapon("Serbu Super Shorty", 4, 2, 600, 3);
-    Weapon* m1934 = new Weapon("Beretta M1934", 2, 2, 120, 8);
-    //Weapon* mac10 = new Weapon("MAC-10", 3, 2, 200, 30);
-    //Weapon* rsh12 = new Weapon("RSH-12", 3, 2, 800, 2);
-    Ammo* ammo = new Ammo("Pistolenmunition", 1, 1, "9mm", 30);
+    std::vector<ItemRegistry> registry;
 
-    briefcase.addItemAt(pistol, 0, 0); 
-    briefcase.addItemAt(P232, 2, 0);
-    briefcase.addItemAt(m1934, 4, 0);
-//    briefcase.addItemAt(mac10, 0, 4);
-    //briefcase.addItemAt(rsh12, 5, 4);
-//    briefcase.addItemAt(shotgun, 6, 0); 
-    briefcase.addItemAt(ammo, 0, 2);
+    auto registerItem = [&](Item* item, const char* imgPath) {
+        GLuint tex = 0;
+        int w, h;
+        if (LoadTextureFromFile(imgPath, &tex, &w, &h)) {
+            registry.push_back({ item, tex, false });
+        } else {
+            std::cout << "[WARNUNG] Bild konnte nicht geladen werden: " << imgPath << std::endl;
+            registry.push_back({ item, 0, false });
+        }
+    };
 
-    // Texturen laden
-    GLuint texPistol1, texP232, texShotgun, texAmmo, texMac10, texRsh12, texM1923;
-    int w, h;
-    LoadTextureFromFile("img/handguns/P320.png", &texPistol1, &w, &h);
-    LoadTextureFromFile("img/handguns/P232.png", &texP232, &w, &h);
-    //LoadTextureFromFile("img/shotgun.png", &texShotgun, &w, &h);
-    LoadTextureFromFile("img/ammo/ammo.png", &texAmmo, &w, &h);
-    //LoadTextureFromFile("img/mac10.png", &texMac10, &w, &h);
-    //LoadTextureFromFile("img/rsh12.png", &texRsh12, &w, &h);
-    LoadTextureFromFile("img/handguns/m1934.png", &texM1923, &w, &h);
+    // --- ALLE WAFFEN LADEN ---
+    registerItem(new Weapon("Beretta M1934", 2, 2, 120, 8),      "img/handguns/m1934.png");
+    registerItem(new Weapon("Maxim 9", 3, 2, 140, 10),           "img/handguns/Maxim9.png");
+    registerItem(new Weapon("SIG Sauer P232", 2, 2, 130, 7),     "img/handguns/P232.png");
+    registerItem(new Weapon("Alligator Snapper", 2, 2, 150, 15), "img/handguns/P320.png");
+    registerItem(new Weapon("Taurus PT92", 2, 2, 140, 17),       "img/handguns/TaurusJudgeLC.png");
+    registerItem(new Weapon("Taurus TC Encore", 3, 2, 160, 6),   "img/handguns/TC_Encore_Hunter.png");
+    registerItem(new Weapon("HK VP70", 3, 2, 170, 18),           "img/handguns/VP-70.png");
+
+    registerItem(new Weapon("Evo3", 3, 2, 180, 25),              "img/submaschine/Evo_3_A1.png");
+    registerItem(new Weapon("MPA30", 3, 2, 190, 30),             "img/submaschine/MPA30DMG.png");
+    registerItem(new Weapon("Uzi", 3, 2, 170, 32),               "img/submaschine/Uzi-1.png");
+
+    registerItem(new Weapon("RPG-7", 4, 2, 1000, 1),             "img/rifles/Airtronic_RPG7.png");
+    registerItem(new Weapon("M1A1 Thompson", 4, 2, 250, 20),     "img/rifles/M1A_JAE-100.png");
+    registerItem(new Weapon("M990", 4, 2, 300, 15),              "img/rifles/M990_spx.png");
+    registerItem(new Weapon("Sig MCX", 4, 2, 220, 25),           "img/rifles/MCX_VIRTUS_14.png");
+    registerItem(new Weapon("Serbu Super Shorty", 4, 2, 600, 3), "img/rifles/Mossberg_Serbu.png");
+    
+    // HIER WAR DER FEHLER: Großes 'S' bei Short
+    registerItem(new Weapon("Remington 870", 4, 2, 550, 5),      "img/rifles/Remington870Short.png");
+    registerItem(new Weapon("Winchester 1897", 4, 2, 500, 5),    "img/rifles/WinchesterM70Alaskan.png");
+
+    registerItem(new Ammo("Pistolenmunition", 1, 1, "9mm", 30),  "img/ammo/ammo.png");
 
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
@@ -173,120 +162,118 @@ int main() {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        ImGui::Begin("Aktenkoffer (Inventar)", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-        ImGui::Text("Dein Kofferinhalt:");
-        ImGui::Separator();
+        ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
+        ImGui::Begin("Inventar Management", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
-        // ----------------------------------------------------
-        // HIER STELLST DU DIE GRÖßE DES INVENTARS EIN
-        // ----------------------------------------------------
-        float slotSize = 80.0f; // <--- Mach es hier größer oder kleiner (z.B. 64.0f oder 100.0f)
+        // --- SEITENLEISTE ---
+        ImGui::BeginChild("ItemSidebar", ImVec2(250, 650), true);
+        ImGui::Text("Ausrüstung:");
+        ImGui::Separator();
+        
+        for (auto& entry : registry) {
+            if (ImGui::Checkbox(entry.item->name.c_str(), &entry.isInInventory)) {
+                if (entry.isInInventory) {
+                    bool placed = false;
+                    for (int y = 0; y <= briefcase.rows - entry.item->gridHeight && !placed; y++) {
+                        for (int x = 0; x <= briefcase.columns - entry.item->gridWidth && !placed; x++) {
+                            if (briefcase.addItemAt(entry.item, x, y)) placed = true;
+                        }
+                    }
+                    if (!placed) entry.isInInventory = false; 
+                } else {
+                    briefcase.removeItem(entry.item);
+                }
+            }
+        }
+        ImGui::EndChild();
+        ImGui::SameLine();
+
+        // --- AKTENKOFFER ---
+        ImGui::BeginGroup();
+        ImGui::Text("Aktenkoffer (Drag & Drop bereit):");
+        
+        float slotSize = 75.0f;
         ImVec2 gridStartPos = ImGui::GetCursorPos();
 
-        // 1. Hintergrund-Raster zeichnen (jetzt als DROP-Ziel!)
+        // 1. Gitter-Slots zeichnen
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
         for (int y = 0; y < briefcase.rows; ++y) {
             for (int x = 0; x < briefcase.columns; ++x) {
                 ImGui::SetCursorPos(ImVec2(gridStartPos.x + x * slotSize, gridStartPos.y + y * slotSize));
                 ImGui::PushID(y * briefcase.columns + x);
-                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.15f, 0.15f, 0.15f, 0.7f));
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.12f, 0.12f, 0.15f, 1.0f));
                 
-                // WICHTIG: Erlaubt, dass die Waffe über dem Kästchen liegt und Klicks fangen kann
-                ImGui::SetNextItemAllowOverlap();
+                // WICHTIG: Erlaubt Überlappung, damit das Gitter nicht Drag&Drop blockiert!
+                ImGui::SetNextItemAllowOverlap(); 
                 
                 ImGui::Button("##slot", ImVec2(slotSize, slotSize));
                 ImGui::PopStyleColor();
 
-                // DRAG & DROP TARGET: Nimmt Items an, die hier fallen gelassen werden
                 if (ImGui::BeginDragDropTarget()) {
-                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ITEM_PAYLOAD")) {
-                        // Wir haben ein Item gefangen!
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("INV_ITEM")) {
                         Item* droppedItem = *(Item**)payload->Data;
-                        // Versuche es an die x/y Koordinate des aktuellen Kästchens zu legen
                         briefcase.moveItem(droppedItem, x, y);
                     }
                     ImGui::EndDragDropTarget();
                 }
-
                 ImGui::PopID();
             }
         }
         ImGui::PopStyleVar();
 
-        // 2. Die Items obendrüber zeichnen (jetzt als DRAG-Quelle!)
-        float padding = 4.0f; // Abstand zum Rand in Pixeln
+        // 2. Items rendern
+        float p = 3.0f; 
+        for (auto& entry : registry) {
+            if (entry.item->gridX == -1) continue;
 
-        for (Item* item : briefcase.items) {
-            if (item->gridX == -1) continue;
+            ImVec2 itemPos = ImVec2(gridStartPos.x + entry.item->gridX * slotSize + p, 
+                                    gridStartPos.y + entry.item->gridY * slotSize + p);
+            ImVec2 itemSize = ImVec2((entry.item->gridWidth * slotSize) - (p * 2), 
+                                     (entry.item->gridHeight * slotSize) - (p * 2));
 
-            // Position berechnen MIT PADDING (leicht nach unten rechts versetzt)
-            ImVec2 pos = ImVec2(gridStartPos.x + item->gridX * slotSize + padding, 
-                                gridStartPos.y + item->gridY * slotSize + padding);
-            ImGui::SetCursorPos(pos);
-
-            GLuint tex = 0;
-            if (item->name == "Alligator Snapper") tex = texPistol1;
-            else if (item->name == "SIG Sauer P232") tex = texP232;
-            //else if (item->name == "Serbu Super Shorty") tex = texShotgun;
-            else if (item->name == "Pistolenmunition") tex = texAmmo;
-            //else if (item->name == "MAC-10") tex = texMac10;
-            //else if (item->name == "RSH-12") tex = texRsh12;
-            else if (item->name == "Beretta M1934") tex = texM1923;
-
-            // Größe berechnen ABZÜGLICH PADDING (von beiden Seiten)
-            ImVec2 size = ImVec2((item->gridWidth * slotSize) - (padding * 2), 
-                                 (item->gridHeight * slotSize) - (padding * 2));
+            ImGui::SetCursorPos(itemPos);
+            ImGui::PushID(entry.item);
             
-            ImGui::PushID(item); 
-            
-            // Damit das Item selbst auch Überlappungen erlaubt (falls man es wieder anfasst)
+            // WICHTIG: Damit die Waffe als Drag-Quelle funktioniert, wenn sie über dem Grid liegt
             ImGui::SetNextItemAllowOverlap();
 
-            if (tex != 0) {
-                // Tint color auf Weiß (Standard), Border color auf Transparent
-                ImGui::ImageButton(item->name.c_str(), (ImTextureID)(intptr_t)tex, size, ImVec2(0,0), ImVec2(1,1), ImVec4(0,0,0,0), ImVec4(1,1,1,1));
+            if (entry.texture != 0) {
+                ImGui::ImageButton("##btn", (ImTextureID)(intptr_t)entry.texture, itemSize, ImVec2(0,0), ImVec2(1,1), ImVec4(0,0,0,0), ImVec4(1,1,1,1));
             } else {
-                ImGui::Button(item->name.c_str(), size);
+                ImGui::Button(entry.item->name.c_str(), itemSize);
             }
 
-            // DRAG & DROP SOURCE: Wenn man dieses Bild anklickt und zieht
-            if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
-                // Sende einen Pointer auf dieses Item
-                ImGui::SetDragDropPayload("ITEM_PAYLOAD", &item, sizeof(Item*));
-                
-                // Vorschau-Bild rendern, das an der Maus klebt
-                if (tex != 0) {
-                    ImGui::Image((ImTextureID)(intptr_t)tex, size);
-                } else {
-                    ImGui::Text("Verschiebe %s", item->name.c_str());
+            if (ImGui::BeginDragDropSource()) {
+                ImGui::SetDragDropPayload("INV_ITEM", &entry.item, sizeof(Item*));
+                if (entry.texture != 0) {
+                    ImGui::Image((ImTextureID)(intptr_t)entry.texture, ImVec2(60, 60)); 
                 }
+                ImGui::Text("%s", entry.item->name.c_str());
                 ImGui::EndDragDropSource();
             }
 
             if (ImGui::IsItemHovered()) {
-                ImGui::SetTooltip("%s (%dx%d)", item->name.c_str(), item->gridWidth, item->gridHeight);
+                ImGui::SetTooltip("%s\nGröße: %dx%d", entry.item->name.c_str(), entry.item->gridWidth, entry.item->gridHeight);
             }
             ImGui::PopID();
-        } // <--- Diese Klammer hat vorher gefehlt/war verrutscht
+        }
 
-        // Footer
-        ImGui::SetCursorPos(ImVec2(gridStartPos.x, gridStartPos.y + briefcase.rows * slotSize + 10));
+        ImGui::EndGroup();
         ImGui::Separator();
-        ImGui::Text("Status: Resident Evil Inventar bereit.");
+        ImGui::Text("Status: Alle Bilder eingebunden. | %d Items im Koffer", (int)briefcase.items.size());
         ImGui::End();
 
-        // Rendering
         ImGui::Render();
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
         glViewport(0, 0, display_w, display_h);
-        glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
+        glClearColor(0.02f, 0.02f, 0.02f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         glfwSwapBuffers(window);
     }
 
-    // Cleanup
+    for(auto& e : registry) delete e.item;
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
