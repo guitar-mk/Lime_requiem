@@ -127,7 +127,7 @@ int main() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 
-    GLFWwindow* window = glfwCreateWindow(1280, 720, "Resident Evil Inventar", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(1280, 900, "Resident Evil Inventar", NULL, NULL);
     if (window == NULL) { glfwTerminate(); return -1; }
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
@@ -144,14 +144,14 @@ int main() {
     Weapon* shotgun = new Weapon("Serbu Super Shorty", 4, 2, 600, 3);
     Weapon* m1934 = new Weapon("Beretta M1934", 2, 2, 120, 8);
     Weapon* mac10 = new Weapon("MAC-10", 3, 2, 200, 30);
-    Weapon* rsh12 = new Weapon("RSH-12", 4, 3, 800, 2);
+    Weapon* rsh12 = new Weapon("RSH-12", 3, 2, 800, 2);
     Ammo* ammo = new Ammo("Pistolenmunition", 1, 1, "9mm", 30);
 
     briefcase.addItemAt(pistol, 0, 0); 
     briefcase.addItemAt(m1934, 4, 0);
-    briefcase.addItemAt(mac10, 0, 4);
+//    briefcase.addItemAt(mac10, 0, 4);
     briefcase.addItemAt(rsh12, 5, 4);
-    briefcase.addItemAt(shotgun, 6, 0); 
+//    briefcase.addItemAt(shotgun, 6, 0); 
     briefcase.addItemAt(ammo, 0, 2);
 
     // Texturen laden
