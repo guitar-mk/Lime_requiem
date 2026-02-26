@@ -151,7 +151,7 @@ int main() {
     // Texturen laden
     GLuint texPistol, texShotgun, texAmmo;
     int w, h;
-    LoadTextureFromFile("img/pistol.png", &texPistol, &w, &h);
+    LoadTextureFromFile("img/pistol2.png", &texPistol, &w, &h);
     LoadTextureFromFile("img/shotgun.png", &texShotgun, &w, &h);
     LoadTextureFromFile("img/ammo.png", &texAmmo, &w, &h);
 
@@ -165,7 +165,10 @@ int main() {
         ImGui::Text("Dein Kofferinhalt:");
         ImGui::Separator();
 
-        float slotSize = 64.0f; 
+        // ----------------------------------------------------
+        // HIER STELLST DU DIE GRÖßE DES INVENTARS EIN
+        // ----------------------------------------------------
+        float slotSize = 80.0f; // <--- Mach es hier größer oder kleiner (z.B. 64.0f oder 100.0f)
         ImVec2 gridStartPos = ImGui::GetCursorPos();
 
         // 1. Hintergrund-Raster zeichnen (jetzt als DROP-Ziel!)
@@ -176,9 +179,10 @@ int main() {
                 ImGui::PushID(y * briefcase.columns + x);
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.15f, 0.15f, 0.15f, 0.7f));
                 
+                // WICHTIG: Erlaubt, dass die Waffe über dem Kästchen liegt und Klicks fangen kann
                 ImGui::SetNextItemAllowOverlap();
+                
                 ImGui::Button("##slot", ImVec2(slotSize, slotSize));
-
                 ImGui::PopStyleColor();
 
                 // DRAG & DROP TARGET: Nimmt Items an, die hier fallen gelassen werden
@@ -198,11 +202,14 @@ int main() {
         ImGui::PopStyleVar();
 
         // 2. Die Items obendrüber zeichnen (jetzt als DRAG-Quelle!)
+        float padding = 4.0f; // Abstand zum Rand in Pixeln
+
         for (Item* item : briefcase.items) {
             if (item->gridX == -1) continue;
 
-            ImVec2 pos = ImVec2(gridStartPos.x + item->gridX * slotSize, 
-                                gridStartPos.y + item->gridY * slotSize);
+            // Position berechnen MIT PADDING (leicht nach unten rechts versetzt)
+            ImVec2 pos = ImVec2(gridStartPos.x + item->gridX * slotSize + padding, 
+                                gridStartPos.y + item->gridY * slotSize + padding);
             ImGui::SetCursorPos(pos);
 
             GLuint tex = 0;
@@ -210,10 +217,17 @@ int main() {
             else if (item->name == "Serbu Super Shorty") tex = texShotgun;
             else if (item->name == "Pistolenmunition") tex = texAmmo;
 
-            ImVec2 size = ImVec2(item->gridWidth * slotSize, item->gridHeight * slotSize);
+            // Größe berechnen ABZÜGLICH PADDING (von beiden Seiten)
+            ImVec2 size = ImVec2((item->gridWidth * slotSize) - (padding * 2), 
+                                 (item->gridHeight * slotSize) - (padding * 2));
             
             ImGui::PushID(item); 
+            
+            // Damit das Item selbst auch Überlappungen erlaubt (falls man es wieder anfasst)
+            ImGui::SetNextItemAllowOverlap();
+
             if (tex != 0) {
+                // Tint color auf Weiß (Standard), Border color auf Transparent
                 ImGui::ImageButton(item->name.c_str(), (ImTextureID)(intptr_t)tex, size, ImVec2(0,0), ImVec2(1,1), ImVec4(0,0,0,0), ImVec4(1,1,1,1));
             } else {
                 ImGui::Button(item->name.c_str(), size);
@@ -237,7 +251,7 @@ int main() {
                 ImGui::SetTooltip("%s (%dx%d)", item->name.c_str(), item->gridWidth, item->gridHeight);
             }
             ImGui::PopID();
-        }
+        } // <--- Diese Klammer hat vorher gefehlt/war verrutscht
 
         // Footer
         ImGui::SetCursorPos(ImVec2(gridStartPos.x, gridStartPos.y + briefcase.rows * slotSize + 10));
