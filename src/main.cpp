@@ -69,8 +69,15 @@ public:
                     grid[x][y] = item;
                 }
             }
+            item->gridX = startX;
+            item->gridY = startY;
+            items.push_back(item);
+            return true;
+        }
+        return false;
+    }
 
-            // Neues Feature: Ein Item aus dem Raster entfernen
+    // Neues Feature: Ein Item aus dem Raster entfernen
     void removeItem(Item* item) {
         if (item->gridX != -1 && item->gridY != -1) {
             for (int x = item->gridX; x < item->gridX + item->gridWidth; x++) {
@@ -113,13 +120,6 @@ public:
             return false;
         }
     }
-            item->gridX = startX;
-            item->gridY = startY;
-            items.push_back(item);
-            return true;
-        }
-        return false;
-    
 };
 
 int main() {
@@ -168,21 +168,36 @@ int main() {
         float slotSize = 64.0f; 
         ImVec2 gridStartPos = ImGui::GetCursorPos();
 
-        // 1. Hintergrund-Raster zeichnen
+        // 1. Hintergrund-Raster zeichnen (jetzt als DROP-Ziel!)
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
         for (int y = 0; y < briefcase.rows; ++y) {
             for (int x = 0; x < briefcase.columns; ++x) {
                 ImGui::SetCursorPos(ImVec2(gridStartPos.x + x * slotSize, gridStartPos.y + y * slotSize));
                 ImGui::PushID(y * briefcase.columns + x);
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.15f, 0.15f, 0.15f, 0.7f));
+                
+                ImGui::SetNextItemAllowOverlap();
                 ImGui::Button("##slot", ImVec2(slotSize, slotSize));
+
                 ImGui::PopStyleColor();
+
+                // DRAG & DROP TARGET: Nimmt Items an, die hier fallen gelassen werden
+                if (ImGui::BeginDragDropTarget()) {
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ITEM_PAYLOAD")) {
+                        // Wir haben ein Item gefangen!
+                        Item* droppedItem = *(Item**)payload->Data;
+                        // Versuche es an die x/y Koordinate des aktuellen Kästchens zu legen
+                        briefcase.moveItem(droppedItem, x, y);
+                    }
+                    ImGui::EndDragDropTarget();
+                }
+
                 ImGui::PopID();
             }
         }
         ImGui::PopStyleVar();
 
-        // 2. Die Items obendrüber zeichnen
+        // 2. Die Items obendrüber zeichnen (jetzt als DRAG-Quelle!)
         for (Item* item : briefcase.items) {
             if (item->gridX == -1) continue;
 
@@ -197,12 +212,25 @@ int main() {
 
             ImVec2 size = ImVec2(item->gridWidth * slotSize, item->gridHeight * slotSize);
             
-            // PushID für jedes Item, damit die Interaktion sauber bleibt
             ImGui::PushID(item); 
             if (tex != 0) {
                 ImGui::ImageButton(item->name.c_str(), (ImTextureID)(intptr_t)tex, size, ImVec2(0,0), ImVec2(1,1), ImVec4(0,0,0,0), ImVec4(1,1,1,1));
             } else {
                 ImGui::Button(item->name.c_str(), size);
+            }
+
+            // DRAG & DROP SOURCE: Wenn man dieses Bild anklickt und zieht
+            if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+                // Sende einen Pointer auf dieses Item
+                ImGui::SetDragDropPayload("ITEM_PAYLOAD", &item, sizeof(Item*));
+                
+                // Vorschau-Bild rendern, das an der Maus klebt
+                if (tex != 0) {
+                    ImGui::Image((ImTextureID)(intptr_t)tex, size);
+                } else {
+                    ImGui::Text("Verschiebe %s", item->name.c_str());
+                }
+                ImGui::EndDragDropSource();
             }
 
             if (ImGui::IsItemHovered()) {
@@ -211,7 +239,7 @@ int main() {
             ImGui::PopID();
         }
 
-        // Footer - Positioniert unter dem Raster
+        // Footer
         ImGui::SetCursorPos(ImVec2(gridStartPos.x, gridStartPos.y + briefcase.rows * slotSize + 10));
         ImGui::Separator();
         ImGui::Text("Status: Resident Evil Inventar bereit.");
