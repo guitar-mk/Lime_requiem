@@ -157,13 +157,13 @@ int main() {
     registerItem(new Weapon("P320", 2, 2, 100, 15), "img/handguns/P320.png", {"Waffen", "SIG Sauer", 15});
     registerItem(new Weapon("P232", 2, 2, 90, 8), "img/handguns/P232.png", {"Waffen", "Walther", 8});
     registerItem(new Weapon("RSH-12,", 3, 2, 200, 12), "img/handguns/rsh_12.png", {"Waffen", "RSh-12", 12});
-    registerItem(new Weapon("Taurus Judge", 3, 2, 110, 5), "img/handguns/TaurusJudgeLC.png", {"Waffen", "Taurus", 5});
-    registerItem(new Weapon("TC Encore Hunter,", 4, 2, 180, 1), "img/handguns/TC_Encore_Hunter.png", {"Waffen", "Thompson/Center", 1});
+    registerItem(new Weapon("Taurus Judge", 2, 2, 110, 5), "img/handguns/TaurusJudgeLC.png", {"Waffen", "Taurus", 5});
+    registerItem(new Weapon("TC Encore Hunter", 3, 2, 180, 1), "img/handguns/TC_Encore_Hunter.png", {"Waffen", "Thompson/Center", 1});
     registerItem(new Weapon("H&K VP70", 3, 2, 130, 10), "img/handguns/VP-70.png", {"Waffen", "Heckler & Koch", 10});
 
-    registerItem(new Weapon("Airtronic RPG-7", 4, 2, 500, 1), "img/rifles/Airtronic_RPG-7.png", {"Waffen", "Airtronic", 1});
+    registerItem(new Weapon("Airtronic RPG-7", 4, 2, 500, 1), "img/rifles/Airtronic_RPG7.png", {"Waffen", "Airtronic", 1});
     registerItem(new Weapon("M990 spx", 4, 2, 300, 15), "img/rifles/M990_spx.png", {"Waffen", "Beretta", 15});
-    registerItem(new Weapon("MCX Virtus", 4, 2, 220, 30), "img/rifles/MCX_VITRUS_14.png", {"Waffen", "SIG Sauer", 30});
+    registerItem(new Weapon("MCX Virtus", 4, 2, 220, 30), "img/rifles/MCX_VIRTUS_14.png", {"Waffen", "SIG Sauer", 30});
     registerItem(new Weapon("Serbu Super Shorty", 4, 2, 600, 3), "img/rifles/Mossberg_Serbu.png", {"Waffen", "Serbu Firearms", 3});
     registerItem(new Weapon("M1A1 Thompson", 4, 2, 250, 20), "img/rifles/M1A_JAE-100.png", {"Waffen", "Auto-Ordnance", 30});
     registerItem(new Weapon("Remington 870", 4, 2, 150, 8), "img/rifles/Remington870Short.png", {"Waffen", "Remington", 8});
@@ -173,11 +173,14 @@ int main() {
     registerItem(new Weapon("MPA30DMG", 4, 2, 250, 30), "img/submachine/MPA30DMG.png", {"Waffen", "MasterPiece Arms", 30});
     registerItem(new Weapon("Uzi", 4, 2, 180, 32), "img/submachine/Uzi-1.png", {"Waffen", "Izhmash", 32});
     
-    registerItem(new Ammo("Pistolenmunition", 1, 1, "9mm", 30), "img/ammo/ammo.png", {"Munition", "Umarex", 30});
-    registerItem(new Ammo("Schrotmunition", 1, 1, "12 Gauge", 15), "img/ammo/shells.png", {"Munition", "Winchester", 15});
+    registerItem(new Ammo("Pistolenmunition", 2, 2, "9mm", 30), "img/ammo/9mm.png", {"Munition", "Umarex", 30});
+    registerItem(new Ammo("Schrotmunition", 2, 2, "12 Gauge", 15), "img/ammo/shells.png", {"Munition", "Winchester", 15});
+    registerItem(new Ammo("Gewehrmunition 308", 2, 2, "7.62x51mm", 20), "img/ammo/308.png", {"Munition", "Remington", 20});
+    registerItem(new Ammo("Gewehrmunition hornet", 2, 2, "22 Hornet", 25), "img/ammo/hornet.png", {"Munition", "Winchester", 25});
+    registerItem(new Ammo("Pistolenmunition Requiem", 2, 2, "9mm", 15), "img/ammo/requiem.png", {"Munition", "Umarex", 15});
     
     // Beispiel für ein Misc Item (Angenommen du hast eine Klasse 'MiscItem' oder nutzt einfach Item)
-    // registerItem(new Item("Grünes Kraut", 1, 2), "img/misc/green_herb.png", {"Misc", "Arklay Mountains", 0});
+    registerItem(new Item("Grünes Kraut", 2, 2), "img/misc/herb.png", {"Misc", "Arklay Mountains", 0});
 
     // Hauptschleife: Läuft solange das Fenster offen ist (ca. 60 mal pro Sekunde)
     while (!glfwWindowShouldClose(window)) {
