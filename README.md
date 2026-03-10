@@ -27,7 +27,9 @@ Ein interaktives, Grid-basiertes Inventarsystem, inspiriert vom klassischen *Res
 ```text
 Lime_requiem/
 ├── src/            # Enthält den gesamten C++ Quellcode und Header-Dateien (.cpp, .h)
-│   └── imgui/      # Enthält die GUI-Bibliothek Dear ImGui
+│   ├── imgui/      # Geklonte GUI-Bibliothek Dear ImGui
+│   ├── glad/       # OpenGL Loader (Header & glad.c)
+│   └── stb/        # stb_image.h für Texturen
 ├── img/            # Enthält die Spiel-Assets (PNG-Bilder mit transparentem Hintergrund)
 ├── .gitignore      # Verhindert, dass kompilierte Binärdateien auf GitHub landen
 └── README.md       # Diese Datei
@@ -40,6 +42,7 @@ Lime_requiem/
 * **C++ (OOP):** Objektorientierte Architektur für das Backend und die Spiellogik.
 * **GLFW & OpenGL3:** Übernehmen das Hardware-Rendering und das Erstellen des Fensters (Linux/X11).
 * **Dear ImGui:** Zeichnet die reaktive Benutzeroberfläche und das Grid-Inventar (Frontend).
+* **GLAD:** Lädt zur Laufzeit die systemabhängigen OpenGL-Funktionen.
 * **stb_image:** Zum Laden und Dekodieren der PNG-Dateien von der Festplatte in OpenGL-Texturen.
 
 ---
@@ -61,13 +64,39 @@ Das unsichtbare 2D-Raster wird durch ImGui visuell auf den Bildschirm gebracht:
 
 ---
 
-## 🚀 Kompilieren unter Linux/Debian
+## 📦 Abhängigkeiten & Installation (Linux/Debian)
 
-Stelle sicher, dass `g++`, `glfw3` und die OpenGL-Bibliotheken auf deinem System installiert sind. Navigiere in das Hauptverzeichnis des Projekts und führe folgenden Befehl aus:
+Bevor das Projekt kompiliert werden kann, müssen die nötigen Bibliotheken und Systempakete installiert bzw. eingebunden werden.
+
+### 1. Systempakete installieren (GLFW & OpenGL)
+OpenGL ist hardwareseitig vorhanden, benötigt unter Linux aber die Entwickler-Header (Mesa). GLFW wird für das Fenster-Management genutzt.
+```bash
+sudo apt update
+sudo apt install build-essential libglfw3-dev libgl1-mesa-dev
+```
+
+### 2. Dear ImGui klonen
+ImGui wird direkt als Source-Code in das Projekt kompiliert.
+1. Klone das Repository: `git clone https://github.com/ocornut/imgui.git`
+2. Kopiere die Kern-Dateien (`imgui*.cpp`, `imgui*.h`) sowie die genutzten Backends (`backends/imgui_impl_glfw.*` und `backends/imgui_impl_opengl3.*`) in den Ordner `src/imgui/`.
+
+### 3. GLAD (OpenGL Loader)
+1. Generiere die Dateien über den [GLAD Web Service](https://glad.dav1d.de/).
+2. Lade das `.zip` herunter und füge `glad.c` sowie die Header-Ordner (`KHR` und `glad`) in `src/glad/` ein.
+
+### 4. stb_image
+Lade die [stb_image.h](https://github.com/nothings/stb/blob/master/stb_image.h) herunter und platziere sie in `src/stb/`.
+
+---
+
+## 🚀 Kompilieren
+
+Navigiere in das Hauptverzeichnis des Projekts und führe folgenden Befehl aus. *(Achte darauf, dass auch `glad.c` kompiliert wird, falls du es nutzt)*:
 
 ```bash
-g++ src/main.cpp src/Weapon.cpp src/WeaponTypes.cpp src/imgui/*.cpp -o game -lglfw -lGL
+g++ src/main.cpp src/Weapon.cpp src/WeaponTypes.cpp src/glad/glad.c src/imgui/*.cpp -o game -lglfw -lGL -ldl
 ```
+*(Hinweis: `-ldl` ist unter Linux oft nötig, damit GLAD dynamische Bibliotheken laden kann).*
 
 Zum Starten des Programms:
 ```bash
